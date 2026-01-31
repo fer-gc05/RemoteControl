@@ -1,0 +1,4 @@
+# Remote Control — Carro por WiFi con WeMos
+# Solo se usa la librería estándar de Python (socket).
+# No hay dependencias externas. Si añades paquetes, listarlos aquí, por ejemplo:
+# requests==2.31.0
