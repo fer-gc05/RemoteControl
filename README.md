@@ -4,11 +4,12 @@ Proyecto para controlar un carro a distancia por WiFi usando una placa **WeMos**
 
 ## Objetivo
 
-Construir un programa que permita enviar comandos al carro de forma inalámbrica cuando la WeMos está configurada como servidor en la misma red (misma WiFi que el PC).
+Construir un programa que permita enviar comandos al carro de forma inalámbrica cuando la WeMos/ESP32 está configurada como servidor WebSocket en la misma red (misma WiFi que el PC).
 
 ## Estado actual
 
-- **Listo:** script de conexión por socket (`socket.py`) para comunicarse con el carro cuando la WeMos está configurada como servidor TCP en la red.
+- **`socket.py`** — Módulo de conexión al carro por **WebSocket** (puerto 80, ruta `/ws`). Expone `connect_socket()`, `send_command()`, `receive_data()` y `close_socket()`.
+- **`controlador.py`** — Controlador de alto nivel que usa `socket.py`: clase `CarController` con métodos de movimiento, brazo, pinza y velocidad, más modo interactivo por consola.
 
 ---
 
@@ -18,12 +19,13 @@ Sigue estos pasos según tu sistema operativo para instalar el programa y usar u
 
 ### Requisitos previos
 
-- **Python 3.7 o superior** (el proyecto solo usa la librería estándar `socket`, no hay dependencias externas).
-- Conexión a la misma red WiFi que la WeMos del carro.
+- **Python 3.7 o superior**.
+- Dependencia externa: **websocket-client** (ver paso 3).
+- Conexión a la misma red WiFi que el ESP32/WeMos del carro.
 
 ### 1. Obtener el proyecto
 
-Copia la carpeta del proyecto (con `README.md` y `socket.py`) a tu PC, en la ubicación que prefieras.
+Copia la carpeta del proyecto (con `README.md`, `socket.py`, `controlador.py`, `requirements.txt`, etc.) a tu PC, en la ubicación que prefieras.
 
 ### 2. Crear y usar el entorno virtual
 
@@ -81,17 +83,17 @@ Para **desactivar**:
 deactivate
 ```
 
-### 3. Instalar dependencias (opcional)
+### 3. Instalar dependencias
 
-Este proyecto no usa paquetes externos; solo la librería estándar de Python. Si más adelante añades un `requirements.txt`, instala con:
+El módulo `socket.py` usa WebSocket; hace falta la librería **websocket-client**. Con el entorno virtual activado:
 
 ```bash
-# Linux / macOS (con el venv activado)
+# Linux / macOS
 pip install -r requirements.txt
 ```
 
 ```cmd
-REM Windows (con el venv activado)
+REM Windows
 pip install -r requirements.txt
 ```
 
@@ -101,22 +103,22 @@ Con el entorno virtual activado:
 
 ```bash
 # Linux / macOS
-python3 -c "import socket; print('OK')"
+python3 -c "import websocket; print('OK')"
 ```
 
 ```cmd
 REM Windows
-python -c "import socket; print('OK')"
+python -c "import websocket; print('OK')"
 ```
 
-Si imprime `OK`, Python y el módulo `socket` están listos.
+Si imprime `OK`, el entorno está listo para usar el controlador.
 
 ### Resumen por sistema
 
-| Sistema   | Crear venv           | Activar venv              |
-|----------|----------------------|----------------------------|
-| Linux    | `python3 -m venv venv` | `source venv/bin/activate` |
-| macOS    | `python3 -m venv venv` | `source venv/bin/activate` |
+| Sistema   | Crear venv             | Activar venv              |
+|----------|------------------------|----------------------------|
+| Linux    | `python3 -m venv venv`  | `source venv/bin/activate` |
+| macOS    | `python3 -m venv venv`  | `source venv/bin/activate` |
 | Windows  | `python -m venv venv`  | `venv\Scripts\activate` (CMD) o `.\venv\Scripts\Activate.ps1` (PowerShell) |
 
 > **Nota:** En Windows, si el comando `python` no existe, prueba `py -m venv venv` y `py` para ejecutar scripts.
@@ -125,29 +127,100 @@ Si imprime `OK`, Python y el módulo `socket` están listos.
 
 ## Configuración necesaria
 
-Para que el script funcione, la WeMos debe estar configurada así:
+El carro (ESP32) debe estar en la misma WiFi que el PC y con el servidor **WebSocket** activo (puerto 80, ruta `/ws`, como en el firmware del carro).
 
-1. **Conectada a la misma red WiFi** que el ordenador desde el que ejecutas el programa.
-2. **Actuando como servidor TCP:** escuchando en una IP y un puerto concretos.
-3. Debes conocer la **IP** asignada a la WeMos en tu red (p. ej. desde el router o imprimiéndola en el firmware) y el **puerto** donde abre el servidor.
-
-En `socket.py` debes configurar:
+En **`socket.py`** configura la IP (y, si cambias el puerto en el firmware, también `PORT`):
 
 ```python
-HOST = '192.168.1.XXX'   # IP de la WeMos en tu red
-PORT = 12345             # Puerto donde escucha el servidor en la WeMos
+HOST = "192.168.1.100"   # IP del ESP32 en tu red (router o Serial)
+PORT = 80                # Puerto por defecto del servidor WebSocket del carro
+WS_PATH = "/ws"          # Ruta del WebSocket en el firmware
 ```
 
-Sustituye `192.168.1.XXX` por la IP real de tu WeMos y `12345` por el puerto que uses en el firmware.
+---
 
 ## Uso del módulo `socket.py`
 
-El script ofrece estas funciones:
+Es el módulo de conexión al carro por WebSocket. Funciones disponibles:
 
 | Función | Descripción |
 |--------|-------------|
-| `connect_socket()` | Conecta al socket del carro (WeMos). Devuelve el socket o `None` si falla. |
-| `send_command(socket, command)` | Envía un comando (string) al carro. |
-| `receive_data(socket)` | Recibe hasta 1024 bytes de respuesta del carro. |
-| `close_socket(socket)` | Cierra la conexión con el carro. |
+| `connect_socket()` | Conecta al WebSocket del carro. Devuelve la conexión o `None` si falla. |
+| `send_command(conexion, command)` | Envía un comando (string, ej. un carácter `'W'`, `'S'`, `'X'`). |
+| `receive_data(conexion)` | Recibe mensajes del carro (ej. `"CONNECTED"`, `"ACK:x"`). |
+| `close_socket(conexion)` | Cierra la conexión. El carro detiene los motores al desconectar. |
 
+Ejemplo (usar otro nombre al importar para no chocar con el módulo estándar `socket` de Python):
+
+```python
+import socket as car_socket
+
+conn = car_socket.connect_socket()
+if conn:
+    car_socket.send_command(conn, "W")
+    print(car_socket.receive_data(conn))  # ej. ACK:W
+    car_socket.close_socket(conn)
+```
+
+---
+
+## Uso del controlador `controlador.py`
+
+### Modo interactivo
+
+Con el venv activado y el carro encendido en la misma WiFi:
+
+```bash
+# Linux / macOS
+python3 controlador.py
+```
+
+```cmd
+REM Windows
+python controlador.py
+```
+
+En la consola escribe comandos y pulsa Enter. Cada letra se envía al carro. **Q** cierra el programa. Vacío + Enter envía stop.
+
+### Comandos que entiende el carro (un carácter)
+
+| Tecla | Acción en el carro        |
+|-------|----------------------------|
+| W     | Avanzar                    |
+| S     | Retroceder                 |
+| A     | Girar izquierda            |
+| D     | Girar derecha              |
+| X     | Detener motores            |
+| F     | Avanzar ~15 cm y parar     |
+| L     | Girar 90° izquierda y parar|
+| R     | Girar 90° derecha y parar  |
+| U     | Brazo arriba               |
+| J     | Brazo abajo                |
+| O     | Pinza abrir                |
+| C     | Pinza cerrar               |
+| 0–9   | Velocidad (0 mínima, 9 máxima) |
+
+### Usar la clase `CarController` desde tu propio script
+
+```python
+from controlador import CarController
+
+ctrl = CarController()
+if ctrl.connect():
+    ctrl.forward()
+    # ...
+    ctrl.stop()
+    ctrl.arm_up()
+    ctrl.gripper_open()
+    ctrl.set_speed(5)
+    ctrl.disconnect()
+```
+
+Métodos disponibles: `forward()`, `backward()`, `turn_left()`, `turn_right()`, `stop()`, `forward_15cm()`, `turn_90_left()`, `turn_90_right()`, `arm_up()`, `arm_down()`, `gripper_open()`, `gripper_close()`, `set_speed(0-9)`, `send_char(char)`.
+
+---
+
+## Requisitos del proyecto
+
+- Python 3.7+
+- **websocket-client** (en `requirements.txt`)
