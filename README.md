@@ -183,22 +183,19 @@ python controlador.py
 
 En la consola escribe comandos y pulsa Enter. Cada letra se envía al carro. **Q** cierra el programa. Vacío + Enter envía stop.
 
-### Comandos que entiende el carro (un carácter)
+### Comandos que entiende el carro (firmware actual, un carácter)
 
-| Tecla | Acción en el carro        |
-|-------|----------------------------|
-| W     | Avanzar                    |
-| S     | Retroceder                 |
-| A     | Girar izquierda            |
-| D     | Girar derecha              |
-| X     | Detener motores            |
-| F     | Avanzar ~15 cm y parar     |
-| L     | Girar 90° izquierda y parar|
-| R     | Girar 90° derecha y parar  |
-| U     | Brazo arriba               |
-| J     | Brazo abajo                |
-| O     | Pinza abrir                |
-| C     | Pinza cerrar               |
+| Tecla | Acción en el carro           |
+|-------|------------------------------|
+| F     | Avanzar ~15 cm y parar       |
+| B     | Retroceder ~15 cm y parar    |
+| L     | Girar 90° izquierda y parar |
+| R     | Girar 90° derecha y parar    |
+| X     | Detener motores              |
+| U     | Brazo arriba                 |
+| J     | Brazo abajo                  |
+| O     | Pinza abrir                  |
+| C     | Pinza cerrar                 |
 | 0–9   | Velocidad (0 mínima, 9 máxima) |
 
 ### Usar la clase `CarController` desde tu propio script
@@ -217,7 +214,7 @@ if ctrl.connect():
     ctrl.disconnect()
 ```
 
-Métodos disponibles: `forward()`, `backward()`, `turn_left()`, `turn_right()`, `stop()`, `forward_15cm()`, `turn_90_left()`, `turn_90_right()`, `arm_up()`, `arm_down()`, `gripper_open()`, `gripper_close()`, `set_speed(0-9)`, `send_char(char)`.
+Métodos disponibles: `forward()`, `forward_15cm()`, `backward()`, `backward_15cm()`, `turn_left()`, `turn_90_left()`, `turn_right()`, `turn_90_right()`, `stop()`, `arm_up()`, `arm_down()`, `gripper_open()`, `gripper_close()`, `set_speed(0-9)`, `send_char(char)`.
 
 ---
 

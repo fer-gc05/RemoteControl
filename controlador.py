@@ -4,19 +4,16 @@ import time
 # Importamos el módulo de conexión al carro (car_socket.py)
 import car_socket
 
-# En base a la informavion del codigo aplicado al carro tenemos los siguientes comandos:
+# Comandos del firmware actual del carro (WeMos): F B L R X + U J O C + 0-9
 
-CMD_FORWARD = "W"  # Avanzar
-CMD_BACKWARD = "S"  # Retroceder
-CMD_LEFT = "A"  # Girar izquierda
-CMD_RIGHT = "D"  # Girar derecha
-CMD_STOP = "X"  # Detener motores
-CMD_FORWARD_15CM = "F"  # Avanzar 15cm
-CMD_TURN_90_LEFT = "L"  # Girar 90° izquierda
-CMD_TURN_90_RIGHT = "R"  # Girar 90° derecha
-CMD_ARM_UP = "U"  # Brazo arriba
-CMD_ARM_DOWN = "J"  # Brazo abajo
-CMD_GRIPPER_OPEN = "O"  # Pinza abrir
+CMD_STOP = "X"           # Detener motores
+CMD_FORWARD_15CM = "F"   # Avanzar ~15 cm y parar
+CMD_BACKWARD_15CM = "B"  # Retroceder ~15 cm y parar
+CMD_TURN_90_LEFT = "L"   # Girar 90° izquierda y parar
+CMD_TURN_90_RIGHT = "R"  # Girar 90° derecha y parar
+CMD_ARM_UP = "U"         # Brazo arriba
+CMD_ARM_DOWN = "J"       # Brazo abajo
+CMD_GRIPPER_OPEN = "O"   # Pinza abrir
 CMD_GRIPPER_CLOSE = "C"  # Pinza cerrar
 
 
@@ -34,7 +31,8 @@ class CarController:
         if self._connection is None:
             return False
         self._shutdown = False
-        self._receiver_thread = threading.Thread(target=self._receive_loop, daemon=True)
+        self._receiver_thread = threading.Thread(
+            target=self._receive_loop, daemon=True)
         self._receiver_thread.start()
         return True
 
@@ -63,36 +61,35 @@ class CarController:
             car_socket.close_socket(self._connection)
             self._connection = None
 
-    # --- Movimiento ---
-    # Funcion para avanzar el carro.
-    def forward(self):
-        return self._send(CMD_FORWARD)
-
-    # Funcion para retroceder el carro.
-    def backward(self):
-        return self._send(CMD_BACKWARD)
-
-    # Funcion para girar a la izquierda el carro.
-    def turn_left(self):
-        return self._send(CMD_LEFT)
-
-    # Funcion para girar a la derecha el carro.
-    def turn_right(self):
-        return self._send(CMD_RIGHT)
-
-    # Funcion para detener el carro.
+    # --- Movimiento (el firmware solo tiene F/B/L/R con parada automática + X) ---
     def stop(self):
         return self._send(CMD_STOP)
 
-    # Funcion para avanzar 15cm el carro.
+    def forward(self):
+        """Avanzar ~15 cm y parar (comando F)."""
+        return self._send(CMD_FORWARD_15CM)
+
     def forward_15cm(self):
         return self._send(CMD_FORWARD_15CM)
 
-    # Funcion para girar 90° a la izquierda el carro.
+    def backward(self):
+        """Retroceder ~15 cm y parar (comando B)."""
+        return self._send(CMD_BACKWARD_15CM)
+
+    def backward_15cm(self):
+        return self._send(CMD_BACKWARD_15CM)
+
+    def turn_left(self):
+        """Girar 90° izquierda y parar (comando L)."""
+        return self._send(CMD_TURN_90_LEFT)
+
     def turn_90_left(self):
         return self._send(CMD_TURN_90_LEFT)
 
-    # Funcion para girar 90° a la derecha el carro.
+    def turn_right(self):
+        """Girar 90° derecha y parar (comando R)."""
+        return self._send(CMD_TURN_90_RIGHT)
+
     def turn_90_right(self):
         return self._send(CMD_TURN_90_RIGHT)
 
@@ -130,10 +127,9 @@ def main():
     if not ctrl.connect():  # conecta al carro
         return
 
-    print("Conectado. Comandos: W S A D X | F L R | U J O C | 0-9 | Q salir")
-    print("  W=avanzar S=atrás A=izq D=der X=stop")
-    print("  F=avanzar 15cm L=girar 90° izq R=girar 90° der")
-    print("  U=brazo arriba J=brazo abajo O=pinza abrir C=pinza cerrar")
+    print("Conectado. Comandos: F B L R X | U J O C | 0-9 | Q salir")
+    print("  F=avanzar 15cm  B=retroceder 15cm  L=90° izq  R=90° der  X=stop")
+    print("  U=brazo arriba  J=brazo abajo  O=pinza abrir  C=pinza cerrar")
     print("  0-9 = velocidad")
     print()
 
@@ -146,7 +142,7 @@ def main():
             if line == "Q":
                 break
             for char in line:
-                if char in "WSADXFLRUJOC0123456789":  # comandos que entiende el carro
+                if char in "FBRLXUJOC0123456789":  # comandos que entiende el carro
                     ctrl.send_char(char)
                     time.sleep(0.05)
     except KeyboardInterrupt:

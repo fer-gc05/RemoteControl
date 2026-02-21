@@ -1,4 +1,4 @@
-# Configuración: IP del ESP32/carro o simulador. Puerto y ruta /ws.
+# Configuración: IP del WeMos/carro o simulador. Puerto y ruta /ws.
 # Misma PC que el simulador → usa 127.0.0.1. Carro/simulador en otra PC → usa su IP (ej. 192.168.2.16).
 HOST = "127.0.0.1"
 PORT = 8080
