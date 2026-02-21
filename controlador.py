@@ -1,23 +1,23 @@
 import threading
 import time
 
-# Importamos el módulo de conexión al carro (socket.py del proyecto)
-import socket as car_socket
+# Importamos el módulo de conexión al carro (car_socket.py)
+import car_socket
 
+# En base a la informavion del codigo aplicado al carro tenemos los siguientes comandos:
 
-# Comandos de un carácter que entiende el firmware del carro
-CMD_FORWARD = "W"
-CMD_BACKWARD = "S"
-CMD_LEFT = "A"
-CMD_RIGHT = "D"
-CMD_STOP = "X"
-CMD_FORWARD_15CM = "F"
-CMD_TURN_90_LEFT = "L"
-CMD_TURN_90_RIGHT = "R"
-CMD_ARM_UP = "U"
-CMD_ARM_DOWN = "J"
-CMD_GRIPPER_OPEN = "O"
-CMD_GRIPPER_CLOSE = "C"
+CMD_FORWARD = "W"  # Avanzar
+CMD_BACKWARD = "S"  # Retroceder
+CMD_LEFT = "A"  # Girar izquierda
+CMD_RIGHT = "D"  # Girar derecha
+CMD_STOP = "X"  # Detener motores
+CMD_FORWARD_15CM = "F"  # Avanzar 15cm
+CMD_TURN_90_LEFT = "L"  # Girar 90° izquierda
+CMD_TURN_90_RIGHT = "R"  # Girar 90° derecha
+CMD_ARM_UP = "U"  # Brazo arriba
+CMD_ARM_DOWN = "J"  # Brazo abajo
+CMD_GRIPPER_OPEN = "O"  # Pinza abrir
+CMD_GRIPPER_CLOSE = "C"  # Pinza cerrar
 
 
 # Clase para controlar el carro.
@@ -38,7 +38,7 @@ class CarController:
         self._receiver_thread.start()
         return True
 
-    # Funcion para recibir datos del WebSocket del carro.
+    # Funcion para recibir datos del WebSocket del carro en segundo plano.
     def _receive_loop(self):
         while not self._shutdown and self._connection is not None:
             try:
@@ -123,11 +123,11 @@ class CarController:
 
 # Funcion principal para el controlador del carro.
 def main():
-    print("Controlador del carro — WebSocket (módulo socket)")
+    print("Controlador del carro — WebSocket (módulo car_socket)")
     print()
 
-    ctrl = CarController()
-    if not ctrl.connect():
+    ctrl = CarController()  # instancia del controlador del carro
+    if not ctrl.connect():  # conecta al carro
         return
 
     print("Conectado. Comandos: W S A D X | F L R | U J O C | 0-9 | Q salir")
@@ -146,7 +146,7 @@ def main():
             if line == "Q":
                 break
             for char in line:
-                if char in "WSADXFLRUJOC0123456789":
+                if char in "WSADXFLRUJOC0123456789":  # comandos que entiende el carro
                     ctrl.send_char(char)
                     time.sleep(0.05)
     except KeyboardInterrupt:

@@ -1,6 +1,7 @@
-# Configuración: IP del ESP32/carro en tu red. Puerto 80 y ruta /ws por defecto.
-HOST = "192.168.1.100"
-PORT = 80
+# Configuración: IP del ESP32/carro o simulador. Puerto y ruta /ws.
+# Misma PC que el simulador → usa 127.0.0.1. Carro/simulador en otra PC → usa su IP (ej. 192.168.2.16).
+HOST = "127.0.0.1"
+PORT = 8080
 WS_PATH = "/ws"
 
 
@@ -36,15 +37,15 @@ def send_command(sock, command):
 
 
 # Funcion para recibir datos del WebSocket del carro.
+# Si no hay respuesta (timeout, etc.) devuelve None sin imprimir nada.
+# Solo se muestra algo en consola cuando el controlador recibe un mensaje (CONNECTED, ACK:x).
 def receive_data(sock):
-
     if sock is None:
         return None
     try:
         data = sock.recv()
         return data if isinstance(data, str) else data.decode("utf-8")
-    except Exception as e:
-        print(f"Error al recibir datos: {e}")
+    except Exception:
         return None
 
 

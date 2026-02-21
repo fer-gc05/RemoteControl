@@ -1,1 +1,5 @@
-websocket==0.2.1
+# Cliente WebSocket (car_socket.py, controlador.py)
+websocket-client>=1.6.0
+
+# Servidor WebSocket para el simulador (car_simulator.py)
+websockets>=12.0

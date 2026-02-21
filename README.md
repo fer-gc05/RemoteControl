@@ -8,8 +8,9 @@ Construir un programa que permita enviar comandos al carro de forma inalámbrica
 
 ## Estado actual
 
-- **`socket.py`** — Módulo de conexión al carro por **WebSocket** (puerto 80, ruta `/ws`). Expone `connect_socket()`, `send_command()`, `receive_data()` y `close_socket()`.
-- **`controlador.py`** — Controlador de alto nivel que usa `socket.py`: clase `CarController` con métodos de movimiento, brazo, pinza y velocidad, más modo interactivo por consola.
+- **`car_socket.py`** — Módulo de conexión al carro por **WebSocket** (puerto 80, ruta `/ws`). Expone `connect_socket()`, `send_command()`, `receive_data()` y `close_socket()`.
+- **`controlador.py`** — Controlador de alto nivel que usa `car_socket.py`: clase `CarController` con métodos de movimiento, brazo, pinza y velocidad, más modo interactivo por consola.
+- **`car_simulator.py`** — Simulador del carro por WebSocket: imita el comportamiento del firmware ESP32 (mismos comandos y respuestas CONNECTED / ACK:x) para probar sin hardware.
 
 ---
 
@@ -25,7 +26,7 @@ Sigue estos pasos según tu sistema operativo para instalar el programa y usar u
 
 ### 1. Obtener el proyecto
 
-Copia la carpeta del proyecto (con `README.md`, `socket.py`, `controlador.py`, `requirements.txt`, etc.) a tu PC, en la ubicación que prefieras.
+Copia la carpeta del proyecto (con `README.md`, `car_socket.py`, `controlador.py`, `requirements.txt`, etc.) a tu PC, en la ubicación que prefieras.
 
 ### 2. Crear y usar el entorno virtual
 
@@ -85,7 +86,7 @@ deactivate
 
 ### 3. Instalar dependencias
 
-El módulo `socket.py` usa WebSocket; hace falta la librería **websocket-client**. Con el entorno virtual activado:
+El módulo `car_socket.py` usa WebSocket; hace falta la librería **websocket-client**. Con el entorno virtual activado:
 
 ```bash
 # Linux / macOS
@@ -129,7 +130,7 @@ Si imprime `OK`, el entorno está listo para usar el controlador.
 
 El carro (ESP32) debe estar en la misma WiFi que el PC y con el servidor **WebSocket** activo (puerto 80, ruta `/ws`, como en el firmware del carro).
 
-En **`socket.py`** configura la IP (y, si cambias el puerto en el firmware, también `PORT`):
+En **`car_socket.py`** configura la IP (y, si cambias el puerto en el firmware, también `PORT`):
 
 ```python
 HOST = "192.168.1.100"   # IP del ESP32 en tu red (router o Serial)
@@ -139,7 +140,7 @@ WS_PATH = "/ws"          # Ruta del WebSocket en el firmware
 
 ---
 
-## Uso del módulo `socket.py`
+## Uso del módulo `car_socket.py`
 
 Es el módulo de conexión al carro por WebSocket. Funciones disponibles:
 
@@ -150,10 +151,10 @@ Es el módulo de conexión al carro por WebSocket. Funciones disponibles:
 | `receive_data(conexion)` | Recibe mensajes del carro (ej. `"CONNECTED"`, `"ACK:x"`). |
 | `close_socket(conexion)` | Cierra la conexión. El carro detiene los motores al desconectar. |
 
-Ejemplo (usar otro nombre al importar para no chocar con el módulo estándar `socket` de Python):
+Ejemplo:
 
 ```python
-import socket as car_socket
+import car_socket
 
 conn = car_socket.connect_socket()
 if conn:
@@ -220,7 +221,35 @@ Métodos disponibles: `forward()`, `backward()`, `turn_left()`, `turn_right()`, 
 
 ---
 
+## Simulador del carro (`car_simulator.py`)
+
+Simulador que emula el firmware del ESP32: servidor WebSocket con los mismos comandos de un carácter y respuestas **CONNECTED** / **ACK:x**. Sirve para probar el controlador sin el carro físico.
+
+### Arrancar el simulador
+
+```bash
+# Con el venv activado (y pip install -r requirements.txt)
+python3 car_simulator.py
+```
+
+Escucha en **ws://0.0.0.0:8765/** (puerto 8765 para no usar root). En la consola verás los comandos que llegan.
+
+### Probar el controlador contra el simulador
+
+1. En **`car_socket.py`** pon temporalmente la IP y puerto del simulador:
+   - `HOST = "127.0.0.1"`
+   - `PORT = 8765`
+2. En otra terminal, con el venv activado: `python3 controlador.py`.
+3. Escribe comandos (W, S, A, D, X, F, L, R, U, J, O, C, 0-9). El simulador responderá con ACK y mostrará el estado en su consola.
+
+Para usar de nuevo el carro real, restaura en `car_socket.py` la IP del ESP32 y `PORT = 80`.
+
+---
+
 ## Requisitos del proyecto
 
 - Python 3.7+
-- **websocket-client** (en `requirements.txt`)
+- **websocket-client** — cliente (car_socket.py, controlador.py)
+- **websockets** — servidor para el simulador (car_simulator.py)
+
+Todo en `requirements.txt`; instalar con `pip install -r requirements.txt`.
